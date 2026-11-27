@@ -29,4 +29,5 @@ export const config = {
   maxFilesPerBatch: 20,
 }
 
-export const isDemo = !config.apiUrl
+/** Modo demo (solo desarrollo): VITE_DEMO=1 usa fotos de ejemplo y no toca Drive. */
+export const isDemo = import.meta.env.VITE_DEMO === '1'

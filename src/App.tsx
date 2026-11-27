@@ -1,19 +1,27 @@
-import { useCallback, useEffect, useState } from 'react'
-import { Camera, Images, Sparkles } from 'lucide-react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { RefreshCw } from 'lucide-react'
 import { config, isDemo } from './config'
 import { listPhotos } from './lib/api'
 import type { Photo } from './lib/types'
-import UploadPanel from './components/UploadPanel'
-import Gallery from './components/Gallery'
+import { useUploader } from './hooks/useUploader'
+import Logo from './components/Logo'
+import HomeView from './components/HomeView'
+import GalleryView from './components/GalleryView'
+import BottomNav, { type Tab } from './components/BottomNav'
+import Lightbox from './components/Lightbox'
+import Toast, { type ToastData } from './components/Toast'
 
-type Tab = 'subir' | 'galeria'
-const tabFromHash = (): Tab => (location.hash === '#galeria' ? 'galeria' : 'subir')
+const tabFromHash = (): Tab => (location.hash === '#galeria' ? 'galeria' : 'inicio')
 
 export default function App() {
   const [tab, setTab] = useState<Tab>(tabFromHash)
   const [photos, setPhotos] = useState<Photo[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [viewer, setViewer] = useState<number | null>(null)
+  const [toast, setToast] = useState<ToastData | null>(null)
+  const cameraInput = useRef<HTMLInputElement>(null)
+  const galleryInput = useRef<HTMLInputElement>(null)
 
   const refresh = useCallback(async (silent = false) => {
     if (!silent) setLoading(true)
@@ -27,6 +35,22 @@ export default function App() {
     }
   }, [])
 
+  const showToast = useCallback((kind: ToastData['kind'], text: string) => {
+    const id = Date.now()
+    setToast({ id, kind, text })
+    setTimeout(() => setToast((t) => (t?.id === id ? null : t)), 3200)
+  }, [])
+
+  const uploader = useUploader({
+    onFinished: (ok, failed) => {
+      if (ok) {
+        showToast('ok', ok === 1 ? '¡Listo! Tu foto ya está en la galería' : `¡Listo! ${ok} fotos subidas`)
+        void refresh(true)
+      }
+      if (failed) showToast('error', failed === 1 ? 'Una foto no se pudo subir. Toca “Reintentar”.' : `${failed} fotos no se subieron. Toca “Reintentar”.`)
+    },
+  })
+
   useEffect(() => { void refresh() }, [refresh])
   useEffect(() => {
     const onHash = () => setTab(tabFromHash())
@@ -36,72 +60,98 @@ export default function App() {
   useEffect(() => {
     if (!config.autoRefreshSeconds) return
     const id = setInterval(() => { if (!document.hidden) void refresh(true) }, config.autoRefreshSeconds * 1000)
-    return () => clearInterval(id)
+    const onVisible = () => { if (!document.hidden) void refresh(true) }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => { clearInterval(id); document.removeEventListener('visibilitychange', onVisible) }
   }, [refresh])
 
-  const go = (t: Tab) => { location.hash = t === 'galeria' ? '#galeria' : '#subir' }
+  const go = (t: Tab) => {
+    history.replaceState(null, '', t === 'galeria' ? '#galeria' : '#inicio')
+    setTab(t)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+  const openCamera = () => cameraInput.current?.click()
+  const openPicker = () => galleryInput.current?.click()
+  const openPhoto = useCallback((i: number) => { if (config.enableLightbox) setViewer(i) }, [])
+  const closeViewer = useCallback(() => setViewer(null), [])
 
   return (
-    <div className="min-h-dvh pb-28 sm:pb-12">
-      {/* HERO */}
-      <header className="relative overflow-hidden bg-banorte text-white">
-        <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-white/10" />
-        <div className="pointer-events-none absolute -bottom-32 -left-16 h-72 w-72 rounded-full bg-carbon/25" />
-        <div className="relative mx-auto max-w-5xl px-5 pb-14 pt-8 sm:pb-20 sm:pt-12">
-          <div className="flex items-center gap-2 text-sm font-semibold tracking-wide">
-            <span className="grid h-9 w-9 place-items-center rounded-xl bg-white text-banorte"><Sparkles size={20} aria-hidden /></span>
-            Banorte · Tecnología
-          </div>
-          <h1 className="animate-fade-up mt-8 text-4xl font-extrabold leading-tight tracking-tight sm:text-6xl">
-            {config.eventName}
-          </h1>
-          <p className="animate-fade-up mt-3 max-w-xl text-lg text-white/85" style={{ animationDelay: '80ms' }}>
-            {config.tagline}. Sube tus fotos y revive la fiesta.
-          </p>
-          <nav className="mt-8 hidden gap-2 sm:flex" aria-label="Secciones">
-            <TabButton active={tab === 'subir'} onClick={() => go('subir')} icon={<Camera size={18} />} label="Subir fotos" light />
-            <TabButton active={tab === 'galeria'} onClick={() => go('galeria')} icon={<Images size={18} />} label={`Galería${photos.length ? ` (${photos.length})` : ''}`} light />
-          </nav>
+    <div className="mx-auto min-h-dvh max-w-md pb-[calc(env(safe-area-inset-bottom)+7rem)]">
+      <header className="sticky top-0 z-20 bg-canvas/85 px-4 pb-3 pt-[max(env(safe-area-inset-top),0.75rem)] backdrop-blur-lg">
+        <div className="flex items-center justify-between">
+          <Logo />
+          <button
+            type="button"
+            onClick={() => void refresh()}
+            aria-label="Actualizar"
+            className="grid h-10 w-10 cursor-pointer place-items-center rounded-full text-carbon-soft transition active:scale-95 active:bg-mist"
+          >
+            <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
+          </button>
         </div>
       </header>
 
-      <main className="relative mx-auto -mt-8 max-w-5xl px-4 sm:px-5">
+      <main className="px-4 pt-1">
         {isDemo && (
-          <div role="status" className="mb-4 rounded-2xl border border-warn/40 bg-white shadow px-4 py-3 text-sm text-carbon">
-            <b>Modo demo:</b> falta configurar <code className="rounded bg-white px-1">VITE_APPS_SCRIPT_URL</code>. Las fotos no se guardan en Drive.
-          </div>
+          <p role="status" className="mb-4 rounded-2xl bg-warn/15 px-4 py-3 text-sm text-ink ring-1 ring-warn/40">
+            <b>Modo demo:</b> las fotos no se guardan en Drive.
+          </p>
         )}
-        {tab === 'subir' ? (
-          <UploadPanel onUploaded={() => void refresh(true)} onGoGallery={() => go('galeria')} />
+        {tab === 'inicio' ? (
+          <HomeView
+            photos={photos}
+            loading={loading}
+            items={uploader.items}
+            busy={uploader.busy}
+            onCamera={openCamera}
+            onPick={openPicker}
+            onStart={uploader.start}
+            onRemove={uploader.remove}
+            onClear={uploader.clear}
+            onOpenGallery={() => go('galeria')}
+            onOpenPhoto={openPhoto}
+          />
         ) : (
-          <Gallery photos={photos} loading={loading} error={error} onRetry={() => void refresh()} onGoUpload={() => go('subir')} />
+          <GalleryView
+            photos={photos}
+            loading={loading}
+            error={error}
+            onRefresh={() => void refresh()}
+            onCamera={openCamera}
+            onOpenPhoto={openPhoto}
+          />
         )}
       </main>
 
-      {/* TAB BAR MÓVIL */}
-      <nav
-        className="fixed inset-x-0 bottom-0 z-30 border-t border-mist bg-white/95 px-4 pb-[max(env(safe-area-inset-bottom),0.5rem)] pt-2 backdrop-blur sm:hidden"
-        aria-label="Secciones"
-      >
-        <div className="mx-auto grid max-w-md grid-cols-2 gap-2">
-          <TabButton active={tab === 'subir'} onClick={() => go('subir')} icon={<Camera size={20} />} label="Subir" />
-          <TabButton active={tab === 'galeria'} onClick={() => go('galeria')} icon={<Images size={20} />} label="Galería" />
-        </div>
-      </nav>
-    </div>
-  )
-}
+      <BottomNav tab={tab} onTab={go} onCamera={openCamera} count={photos.length} />
 
-function TabButton({ active, onClick, icon, label, light }: {
-  active: boolean; onClick: () => void; icon: React.ReactNode; label: string; light?: boolean
-}) {
-  const base = 'flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-2xl px-5 text-sm font-semibold transition-colors'
-  const style = light
-    ? active ? 'bg-white text-banorte shadow-lg' : 'bg-white/15 text-white hover:bg-white/25'
-    : active ? 'bg-banorte text-white' : 'text-carbon-soft hover:bg-mist'
-  return (
-    <button type="button" onClick={onClick} aria-current={active ? 'page' : undefined} className={`${base} ${style}`}>
-      {icon}{label}
-    </button>
+      {/* Cámara: la foto se sube sola. Galería: se confirma antes de subir. */}
+      <input
+        ref={cameraInput}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        hidden
+        onChange={(e) => {
+          uploader.add(e.target.files, true)
+          e.target.value = ''
+          if (tab !== 'inicio') go('inicio')
+        }}
+      />
+      <input
+        ref={galleryInput}
+        type="file"
+        accept="image/*"
+        multiple
+        hidden
+        onChange={(e) => {
+          uploader.add(e.target.files, false, config.maxFilesPerBatch)
+          e.target.value = ''
+        }}
+      />
+
+      <Toast toast={toast} />
+      {viewer !== null && <Lightbox photos={photos} index={viewer} onIndex={setViewer} onClose={closeViewer} />}
+    </div>
   )
 }

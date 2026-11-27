@@ -8,7 +8,7 @@ npm install
 cp .env.example .env   # pega aquí la URL del Web App (…/exec)
 npm run dev
 ```
-Sin `VITE_APPS_SCRIPT_URL` la app corre en **modo demo** (no guarda en Drive).
+Para ver el diseño sin tocar Drive: `VITE_DEMO=1 npm run dev` (modo demo con fotos de ejemplo).
 
 ## Backend (Apps Script)
 `apps-script/Code.gs` expone `GET` (lista) y `POST` (subida, `{files:[{name,type,dataUrl}]}`) sobre la carpeta de Drive.
