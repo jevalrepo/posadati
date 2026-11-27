@@ -26,7 +26,11 @@ async function parseJson(res: Response) {
   try {
     return JSON.parse(text)
   } catch {
-    throw new Error('El servidor no respondió JSON. Revisa que el Web App esté implementado con acceso "Cualquier usuario".')
+    const title = text.match(/<title>([^<]*)<\/title>/i)?.[1]?.trim()
+    throw new Error(
+      `El servidor no respondió JSON (HTTP ${res.status}${title ? ` · "${title}"` : ''}). ` +
+        'Revisa que el Web App esté implementado con acceso "Cualquier usuario" (no "con cuenta de Google").',
+    )
   }
 }
 
