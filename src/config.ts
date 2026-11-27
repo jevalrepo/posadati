@@ -4,7 +4,9 @@ export const config = {
   tagline: 'Comparte tus mejores momentos',
 
   /** URL del Web App de Apps Script (…/exec). Sin ella la app corre en modo demo. */
-  apiUrl: (import.meta.env.VITE_APPS_SCRIPT_URL as string | undefined) ?? '',
+  apiUrl:
+    (import.meta.env.VITE_APPS_SCRIPT_URL as string | undefined) ||
+    'https://script.google.com/macros/s/AKfycbyU3CyKOkYveX24AtcVOemK1DxKoi6tIiegSGMcwHjK-BN_17YiLuqbQPL_pjHSitZN/exec',
 
   /** Segundos entre actualizaciones automáticas de la galería (0 = desactivado). */
   autoRefreshSeconds: 30,
