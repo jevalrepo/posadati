@@ -21,10 +21,19 @@ export const thumbUrl = (p: Photo, w = 600) => p.src ?? `https://drive.google.co
 export const fullUrl = (p: Photo) => p.src ?? `https://drive.google.com/thumbnail?id=${p.id}&sz=w2000`
 export const downloadUrl = (p: Photo) => p.src ?? `https://drive.google.com/uc?export=download&id=${p.id}`
 
+async function parseJson(res: Response) {
+  const text = await res.text()
+  try {
+    return JSON.parse(text)
+  } catch {
+    throw new Error('El servidor no respondió JSON. Revisa que el Web App esté implementado con acceso "Cualquier usuario".')
+  }
+}
+
 export async function listPhotos(): Promise<Photo[]> {
   if (isDemo) return [...demoStore]
   const res = await fetch(config.apiUrl)
-  const data = await res.json()
+  const data = await parseJson(res)
   if (!data.success) throw new Error(data.error ?? 'No se pudo cargar la galería')
   // El script no entrega fecha: los nombres llevan timestamp, así que ordenamos por nombre (más recientes primero)
   return (data.files as Photo[]).sort((a, b) => b.name.localeCompare(a.name))
@@ -47,6 +56,6 @@ export async function uploadPhoto(file: File): Promise<void> {
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
     body: JSON.stringify({ files: [{ name, type, dataUrl }] }),
   })
-  const json = await res.json()
+  const json = await parseJson(res)
   if (!json.success) throw new Error(json.error ?? 'Error al subir la foto')
 }
