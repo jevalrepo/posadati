@@ -21,10 +21,10 @@ export async function compressImage(file: File): Promise<Blob> {
   }
 }
 
-export function blobToBase64(blob: Blob): Promise<string> {
+export function blobToDataUrl(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const r = new FileReader()
-    r.onload = () => resolve((r.result as string).split(',')[1])
+    r.onload = () => resolve(r.result as string)
     r.onerror = () => reject(r.error)
     r.readAsDataURL(blob)
   })

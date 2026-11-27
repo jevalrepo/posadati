@@ -11,7 +11,7 @@ npm run dev
 Sin `VITE_APPS_SCRIPT_URL` la app corre en **modo demo** (no guarda en Drive).
 
 ## Backend (Apps Script)
-`apps-script/Code.gs` expone `GET ?action=list` y `POST` de subida sobre la carpeta de Drive.
+`apps-script/Code.gs` expone `GET` (lista) y `POST` (subida, `{files:[{name,type,dataUrl}]}`) sobre la carpeta de Drive.
 Implementar como Web App → ejecutar como *Yo*, acceso *Cualquier usuario*. Si ya tienes tu script, solo debe respetar el mismo contrato.
 
 ## Configuración

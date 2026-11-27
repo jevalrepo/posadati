@@ -1,50 +1,69 @@
-/**
- * Backend de Posada TI 2026 (Google Apps Script).
- * Despliegue: Implementar > Nueva implementación > Aplicación web
- *   - Ejecutar como: Yo
- *   - Quién tiene acceso: Cualquier usuario
- * Copia la URL (termina en /exec) en VITE_APPS_SCRIPT_URL.
- *
- * Contrato:
- *   GET  ?action=list  -> { ok, files: [{ id, name, createdAt }] }
- *   POST (text/plain, JSON { name, mimeType, data(base64) }) -> { ok, id }
- */
-var FOLDER_ID = '1VmFykBhQ5UK3BvDpXXkfHH-3-J06-nro';
+// Script original en uso (Web App). Contrato:
+//   GET  (sin parámetros) -> { success, files: [{ id, name }] }
+//   POST text/plain JSON { files: [{ name, type, dataUrl }] } -> { success, files: [{ id, name }] }
+// Las fotos se ven en el portal si la CARPETA está compartida como "Cualquier persona con el enlace".
+const FOLDER_ID = "1VmFykBhQ5UK3BvDpXXkfHH-3-J06-nro";
 
-function json_(obj) {
-  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
+function fileToMeta(file) {
+  return { id: file.getId(), name: file.getName() };
+}
+
+function doPost(e) {
+  try {
+    var outputData = { success: true, files: [] };
+    if (!e || !e.postData || !e.postData.contents) {
+      outputData.success = false;
+      outputData.error = 'SIN_POSTDATA_JSON: no llegó contenido en el cuerpo.';
+      return jsonResponse(outputData);
+    }
+    var payload;
+    try {
+      payload = JSON.parse(e.postData.contents);
+    } catch (err) {
+      outputData.success = false;
+      outputData.error = 'JSON_INVÁLIDO: ' + err;
+      return jsonResponse(outputData);
+    }
+    if (!payload.files || !Array.isArray(payload.files) || payload.files.length === 0) {
+      outputData.success = false;
+      outputData.error = 'SIN_FILES: arreglo files vacío o no enviado.';
+      return jsonResponse(outputData);
+    }
+    var folder = DriveApp.getFolderById(FOLDER_ID);
+    payload.files.forEach(function (f) {
+      if (!f.dataUrl || !f.name) return;
+      var matches = f.dataUrl.match(/^data:(.+);base64,(.*)$/);
+      var contentType, base64Data;
+      if (matches && matches.length === 3) {
+        contentType = matches[1];
+        base64Data = matches[2];
+      } else {
+        contentType = f.type || "application/octet-stream";
+        base64Data = f.dataUrl;
+      }
+      var blob = Utilities.newBlob(Utilities.base64Decode(base64Data), contentType, f.name);
+      outputData.files.push(fileToMeta(folder.createFile(blob)));
+    });
+    return jsonResponse(outputData);
+  } catch (err) {
+    return jsonResponse({ success: false, error: String(err) });
+  }
 }
 
 function doGet(e) {
   try {
     var folder = DriveApp.getFolderById(FOLDER_ID);
-    var it = folder.getFiles(), files = [];
-    while (it.hasNext()) {
-      var f = it.next();
-      if (String(f.getMimeType()).indexOf('image/') === 0) {
-        files.push({ id: f.getId(), name: f.getName(), createdAt: f.getDateCreated().toISOString() });
-      }
-    }
-    files.sort(function (a, b) { return a.createdAt < b.createdAt ? 1 : -1; });
-    return json_({ ok: true, files: files });
+    var filesIt = folder.getFiles();
+    var result = [];
+    while (filesIt.hasNext()) result.push(fileToMeta(filesIt.next()));
+    return jsonResponse({ success: true, files: result });
   } catch (err) {
-    return json_({ ok: false, error: String(err) });
+    return jsonResponse({ success: false, error: String(err) });
   }
 }
 
-function doPost(e) {
-  try {
-    var body = JSON.parse(e.postData.contents);
-    if (String(body.mimeType).indexOf('image/') !== 0) throw new Error('Solo imágenes');
-    var ext = (body.mimeType.split('/')[1] || 'jpg').replace('jpeg', 'jpg');
-    var name = Utilities.formatDate(new Date(), 'America/Mexico_City', 'yyyyMMdd-HHmmss') + '-' +
-      Math.floor(Math.random() * 1e4) + '.' + ext;
-    var blob = Utilities.newBlob(Utilities.base64Decode(body.data), body.mimeType, name);
-    var file = DriveApp.getFolderById(FOLDER_ID).createFile(blob);
-    // Las miniaturas necesitan que el archivo sea visible con el enlace
-    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-    return json_({ ok: true, id: file.getId() });
-  } catch (err) {
-    return json_({ ok: false, error: String(err) });
-  }
+function jsonResponse(obj) {
+  var output = ContentService.createTextOutput(JSON.stringify(obj));
+  output.setMimeType(ContentService.MimeType.JSON);
+  return output;
 }

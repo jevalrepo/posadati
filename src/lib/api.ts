@@ -1,5 +1,5 @@
 import { config, isDemo } from '../config'
-import { blobToBase64, compressImage } from './image'
+import { blobToDataUrl, compressImage } from './image'
 import type { Photo } from './types'
 
 /** Demo: fotos generadas localmente para ver el diseño sin backend. */
@@ -13,7 +13,7 @@ function demoSvg(i: number, h: number) {
 if (isDemo) {
   const heights = [400, 560, 480, 640, 420, 520, 600, 460]
   heights.forEach((h, i) =>
-    demoStore.push({ id: `demo-${i}`, name: `demo-${i}.jpg`, createdAt: new Date(Date.now() - i * 3600e3).toISOString(), src: demoSvg(i, h) }),
+    demoStore.push({ id: `demo-${i}`, name: `demo-${i}.jpg`, src: demoSvg(i, h) }),
   )
 }
 
@@ -23,26 +23,30 @@ export const downloadUrl = (p: Photo) => p.src ?? `https://drive.google.com/uc?e
 
 export async function listPhotos(): Promise<Photo[]> {
   if (isDemo) return [...demoStore]
-  const res = await fetch(`${config.apiUrl}?action=list`)
+  const res = await fetch(config.apiUrl)
   const data = await res.json()
-  if (!data.ok) throw new Error(data.error ?? 'No se pudo cargar la galería')
-  return data.files as Photo[]
+  if (!data.success) throw new Error(data.error ?? 'No se pudo cargar la galería')
+  // El script no entrega fecha: los nombres llevan timestamp, así que ordenamos por nombre (más recientes primero)
+  return (data.files as Photo[]).sort((a, b) => b.name.localeCompare(a.name))
 }
 
 export async function uploadPhoto(file: File): Promise<void> {
   const blob = await compressImage(file)
   if (isDemo) {
     await new Promise((r) => setTimeout(r, 900))
-    demoStore.unshift({ id: `local-${Date.now()}`, name: file.name, createdAt: new Date().toISOString(), src: URL.createObjectURL(blob) })
+    demoStore.unshift({ id: `local-${Date.now()}`, name: file.name, src: URL.createObjectURL(blob) })
     return
   }
-  const data = await blobToBase64(blob)
+  const dataUrl = await blobToDataUrl(blob)
+  const type = blob.type || 'image/jpeg'
+  const ext = type === 'image/jpeg' ? 'jpg' : type.split('/')[1] || 'jpg'
+  const name = `${Date.now()}-${Math.floor(Math.random() * 1e4)}.${ext}`
   // text/plain evita el preflight CORS que Apps Script no soporta
   const res = await fetch(config.apiUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify({ name: file.name, mimeType: blob.type || 'image/jpeg', data }),
+    body: JSON.stringify({ files: [{ name, type, dataUrl }] }),
   })
   const json = await res.json()
-  if (!json.ok) throw new Error(json.error ?? 'Error al subir la foto')
+  if (!json.success) throw new Error(json.error ?? 'Error al subir la foto')
 }
