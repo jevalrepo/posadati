@@ -19,5 +19,5 @@ Ajustes en `src/config.ts` (auto‑actualización, descarga, lightbox, calidad d
 
 ## GitHub Pages
 1. Settings → Pages → Source: **GitHub Actions**.
-2. Settings → Secrets and variables → Actions → *Variables*: `VITE_APPS_SCRIPT_URL`.
+2. La URL del Web App está en `src/config.ts` (`DEFAULT_API_URL`).
 3. Push a `main`. URL: https://jevalrepo.github.io/posadati/
