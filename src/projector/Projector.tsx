@@ -5,6 +5,7 @@ import { listPhotos, sizedUrl } from '../lib/api'
 import type { Photo } from '../lib/types'
 import { COLOR_FX, useSettings, type Transition } from './settings'
 import SettingsPanel from './SettingsPanel'
+import { LOGO_URL } from '../components/Logo'
 
 interface Slide { key: number; photo: Photo; fx: Transition; isNew: boolean; kb: 'a' | 'b' }
 
@@ -235,9 +236,7 @@ export default function Projector() {
       {/* MARCA Y CONTADOR */}
       {s.showInfo && current && (
         <div className="pointer-events-none absolute left-10 top-9 z-10 flex items-center gap-4">
-          <span className="grid h-14 w-14 place-items-center rounded-2xl bg-banorte shadow-xl shadow-black/40">
-            <svg viewBox="0 0 24 24" className="h-8 w-8" aria-hidden><path d="M12 2.5l2.35 6.4 6.65.35-5.2 4.15 1.8 6.6L12 16.2 6.4 20l1.8-6.6L3 9.25l6.65-.35z" fill="#fff" /></svg>
-          </span>
+          <img src={LOGO_URL} alt="Banorte" className="h-16 w-16 rounded-full shadow-xl shadow-black/40" />
           <div className="leading-none drop-shadow-[0_2px_10px_rgba(0,0,0,.6)]">
             <p className="text-2xl font-extrabold tracking-tight">Posada TI</p>
             <p className="mt-1 text-sm font-bold tracking-[.25em] text-white/80">2026</p>
