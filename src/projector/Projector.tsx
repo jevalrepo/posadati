@@ -32,7 +32,7 @@ function preload(url: string) {
 }
 
 export default function Projector() {
-  const { settings: s, update, reset, exportJson, mode, saving, isCustom } = useSettings()
+  const { settings: s, update, reset, exportJson, mode, isCustom } = useSettings()
   const [photos, setPhotos] = useState<Photo[]>([])
   const [loaded, setLoaded] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -303,7 +303,7 @@ export default function Projector() {
         </div>
       )}
 
-      {panel && <SettingsPanel settings={s} update={update} reset={reset} mode={mode} saving={saving} isCustom={isCustom} exportJson={exportJson} onClose={() => setPanel(false)} />}
+      {panel && <SettingsPanel settings={s} update={update} reset={reset} mode={mode} isCustom={isCustom} exportJson={exportJson} onClose={() => setPanel(false)} />}
     </div>
   )
 }

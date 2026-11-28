@@ -7,13 +7,12 @@ interface Props {
   update: <K extends keyof Settings>(k: K, v: Settings[K]) => void
   reset: () => void
   mode: SyncMode
-  saving: boolean
   isCustom: boolean
   exportJson: () => string
   onClose: () => void
 }
 
-export default function SettingsPanel({ settings: s, update, reset, mode, saving, isCustom, exportJson, onClose }: Props) {
+export default function SettingsPanel({ settings: s, update, reset, mode, isCustom, exportJson, onClose }: Props) {
   const [copied, setCopied] = useState<'ok' | 'manual' | null>(null)
   const copy = async () => {
     try {
@@ -89,12 +88,6 @@ export default function SettingsPanel({ settings: s, update, reset, mode, saving
       </div>
 
       <div className="space-y-2 border-t border-white/10 p-4">
-        <p className="flex items-center gap-2 text-xs text-white/55">
-          <span className={`h-2 w-2 shrink-0 rounded-full ${mode === 'remote' ? 'bg-ok' : isCustom ? 'bg-warn' : 'bg-white/40'}`} />
-          {mode === 'remote'
-            ? saving ? 'Guardando para todas las pantallas…' : 'Compartidos: se guardan para todas las pantallas'
-            : isCustom ? 'Cambios guardados solo en esta computadora' : 'Usando los ajustes del repositorio'}
-        </p>
         {copied === 'manual' && (
           <textarea
             readOnly
