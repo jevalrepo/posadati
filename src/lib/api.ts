@@ -19,6 +19,7 @@ if (isDemo) {
 
 export const thumbUrl = (p: Photo, w = 600) => p.src ?? `https://drive.google.com/thumbnail?id=${p.id}&sz=w${w}`
 export const fullUrl = (p: Photo) => p.src ?? `https://drive.google.com/thumbnail?id=${p.id}&sz=w2000`
+export const sizedUrl = (p: Photo, w: number) => p.src ?? `https://drive.google.com/thumbnail?id=${p.id}&sz=w${w}`
 export const downloadUrl = (p: Photo) => p.src ?? `https://drive.google.com/uc?export=download&id=${p.id}`
 
 async function parseJson(res: Response) {

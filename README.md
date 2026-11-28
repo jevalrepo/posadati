@@ -21,3 +21,9 @@ Ajustes en `src/config.ts` (auto‑actualización, descarga, lightbox, calidad d
 1. Settings → Pages → Source: **GitHub Actions**.
 2. La URL del Web App está en `src/config.ts` (`DEFAULT_API_URL`).
 3. Push a `main`. URL: https://jevalrepo.github.io/posadati/
+
+## Proyector (pantalla grande)
+Abre `https://jevalrepo.github.io/posadati/#/proyector` en la computadora conectada al proyector.
+Presentación a pantalla completa con fotos nuevas al instante, código QR para subir y panel de ajustes
+(transición, tiempo por foto, velocidad, Ken Burns, orden, encuadre, efecto de color).
+Atajos: `Espacio` pausa, `←/→` navegar, `F` pantalla completa, `S` ajustes.
