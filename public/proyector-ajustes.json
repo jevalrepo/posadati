@@ -1,0 +1,12 @@
+{
+  "transition": "fade",
+  "kenBurns": true,
+  "interval": 7,
+  "speed": 1200,
+  "order": "recent",
+  "fit": "contain",
+  "colorFx": "none",
+  "showQr": true,
+  "showInfo": true,
+  "prioritizeNew": true
+}

@@ -27,3 +27,7 @@ Abre `https://jevalrepo.github.io/posadati/#/proyector` en la computadora conect
 Presentación a pantalla completa con fotos nuevas al instante, código QR para subir y panel de ajustes
 (transición, tiempo por foto, velocidad, Ken Burns, orden, encuadre, efecto de color).
 Atajos: `Espacio` pausa, `←/→` navegar, `F` pantalla completa, `S` ajustes.
+
+**Ajustes compartidos:** si el Apps Script tiene la versión de `apps-script/Code.gs` (con `action=settings`),
+los ajustes se guardan en el script y todas las pantallas los reciben (cada 15 s). Si no, se guardan solo en
+esa computadora. Los valores base para cualquier pantalla están en `public/proyector-ajustes.json`.

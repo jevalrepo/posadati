@@ -64,3 +64,31 @@ export async function uploadPhoto(file: File): Promise<void> {
   const json = await parseJson(res)
   if (!json.success) throw new Error(json.error ?? 'Error al subir la foto')
 }
+
+/** Ajustes del proyector guardados en el Apps Script. null = el script aún no soporta ajustes. */
+export async function getRemoteSettings(): Promise<Record<string, unknown> | null> {
+  if (isDemo) return null
+  try {
+    const res = await fetch(`${config.apiUrl}?action=settings&t=${Date.now()}`)
+    const data = JSON.parse(await res.text())
+    if (!data.success || !('settings' in data)) return null
+    return data.settings ?? {}
+  } catch {
+    return null
+  }
+}
+
+export async function saveRemoteSettings(settings: object): Promise<boolean> {
+  if (isDemo) return false
+  try {
+    const res = await fetch(config.apiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'saveSettings', settings }),
+    })
+    const data = JSON.parse(await res.text())
+    return !!data.success && data.saved === true
+  } catch {
+    return false
+  }
+}

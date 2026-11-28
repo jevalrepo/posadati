@@ -1,8 +1,11 @@
-// Script original en uso (Web App). Contrato:
-//   GET  (sin parámetros) -> { success, files: [{ id, name }] }
-//   POST text/plain JSON { files: [{ name, type, dataUrl }] } -> { success, files: [{ id, name }] }
+// Script del Web App. Contrato:
+//   GET  (sin parámetros)        -> { success, files: [{ id, name }] }
+//   GET  ?action=settings        -> { success, settings }   (ajustes compartidos del proyector)
+//   POST { files: [{ name, type, dataUrl }] }      -> { success, files: [{ id, name }] }
+//   POST { action: "saveSettings", settings: {} }  -> { success, saved: true }
 // Las fotos se ven en el portal si la CARPETA está compartida como "Cualquier persona con el enlace".
 const FOLDER_ID = "1VmFykBhQ5UK3BvDpXXkfHH-3-J06-nro";
+const SETTINGS_KEY = "PROYECTOR_AJUSTES";
 
 function fileToMeta(file) {
   return { id: file.getId(), name: file.getName() };
@@ -23,6 +26,13 @@ function doPost(e) {
       outputData.success = false;
       outputData.error = 'JSON_INVÁLIDO: ' + err;
       return jsonResponse(outputData);
+    }
+    if (payload.action === 'saveSettings') {
+      var settings = payload.settings && typeof payload.settings === 'object' ? payload.settings : {};
+      var json = JSON.stringify(settings);
+      if (json.length > 5000) return jsonResponse({ success: false, error: 'AJUSTES_DEMASIADO_GRANDES' });
+      PropertiesService.getScriptProperties().setProperty(SETTINGS_KEY, json);
+      return jsonResponse({ success: true, saved: true });
     }
     if (!payload.files || !Array.isArray(payload.files) || payload.files.length === 0) {
       outputData.success = false;
@@ -52,6 +62,10 @@ function doPost(e) {
 
 function doGet(e) {
   try {
+    if (e && e.parameter && e.parameter.action === 'settings') {
+      var raw = PropertiesService.getScriptProperties().getProperty(SETTINGS_KEY);
+      return jsonResponse({ success: true, settings: raw ? JSON.parse(raw) : {} });
+    }
     var folder = DriveApp.getFolderById(FOLDER_ID);
     var filesIt = folder.getFiles();
     var result = [];

@@ -1,14 +1,29 @@
-import { RotateCcw, X } from 'lucide-react'
-import { COLOR_FX, FITS, ORDERS, TRANSITIONS, type Settings } from './settings'
+import { useState } from 'react'
+import { Check, Copy, RotateCcw, X } from 'lucide-react'
+import { COLOR_FX, FITS, ORDERS, TRANSITIONS, type Settings, type SyncMode } from './settings'
 
 interface Props {
   settings: Settings
   update: <K extends keyof Settings>(k: K, v: Settings[K]) => void
   reset: () => void
+  mode: SyncMode
+  saving: boolean
+  isCustom: boolean
+  exportJson: () => string
   onClose: () => void
 }
 
-export default function SettingsPanel({ settings: s, update, reset, onClose }: Props) {
+export default function SettingsPanel({ settings: s, update, reset, mode, saving, isCustom, exportJson, onClose }: Props) {
+  const [copied, setCopied] = useState<'ok' | 'manual' | null>(null)
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(exportJson())
+      setCopied('ok')
+      setTimeout(() => setCopied(null), 2500)
+    } catch {
+      setCopied('manual')
+    }
+  }
   return (
     <aside
       aria-label="Ajustes de la presentación"
@@ -73,8 +88,31 @@ export default function SettingsPanel({ settings: s, update, reset, onClose }: P
         </div>
       </div>
 
-      <div className="border-t border-white/10 p-4">
-        <button type="button" onClick={reset} className="flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-white/10 text-sm font-semibold hover:bg-white/15">
+      <div className="space-y-2 border-t border-white/10 p-4">
+        <p className="flex items-center gap-2 text-xs text-white/55">
+          <span className={`h-2 w-2 shrink-0 rounded-full ${mode === 'remote' ? 'bg-ok' : isCustom ? 'bg-warn' : 'bg-white/40'}`} />
+          {mode === 'remote'
+            ? saving ? 'Guardando para todas las pantallas…' : 'Compartidos: se guardan para todas las pantallas'
+            : isCustom ? 'Cambios guardados solo en esta computadora' : 'Usando los ajustes del repositorio'}
+        </p>
+        {copied === 'manual' && (
+          <textarea
+            readOnly
+            value={exportJson()}
+            onFocus={(e) => e.currentTarget.select()}
+            className="h-32 w-full rounded-xl bg-black/40 p-2 font-mono text-[11px] text-white/80"
+            aria-label="Ajustes en formato JSON"
+          />
+        )}
+        {mode === 'local' && <button type="button" onClick={copy} className="flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-banorte text-sm font-bold hover:bg-banorte-dark">
+          {copied === 'ok' ? <><Check size={16} /> ¡Copiado!</> : <><Copy size={16} /> Copiar ajustes para el repo</>}
+        </button>}
+        <button
+          type="button"
+          onClick={reset}
+          disabled={!isCustom}
+          className="flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-white/10 text-sm font-semibold hover:bg-white/15 disabled:cursor-default disabled:opacity-40"
+        >
           <RotateCcw size={16} /> Restablecer ajustes
         </button>
       </div>
