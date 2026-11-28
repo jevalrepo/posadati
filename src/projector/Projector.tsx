@@ -315,13 +315,13 @@ function Layer({ slide, mode, fit, colorCss, kenBurns, interval, speed }: {
   const url = imgUrl(slide.photo)
   return (
     <div
-      className={`fx-layer fx-${mode}-${slide.fx} absolute inset-0 overflow-hidden`}
+      className={`fx-layer fx-${mode}-${slide.fx} absolute inset-0 overflow-hidden bg-black`}
       style={{ zIndex: mode === 'in' ? 2 : 1, backfaceVisibility: 'hidden' }}
     >
       {/* El filtro de color va en una capa interna para no chocar con las transiciones que animan "filter" */}
       <div className="absolute inset-0" style={{ filter: colorCss === 'none' ? undefined : colorCss }}>
       {fit === 'contain' && (
-        <img src={url} alt="" referrerPolicy="no-referrer" className="absolute inset-0 h-full w-full scale-110 object-cover opacity-60 blur-3xl" aria-hidden />
+        <img src={url} alt="" referrerPolicy="no-referrer" className="absolute inset-0 h-full w-full scale-125 object-cover blur-3xl brightness-50" aria-hidden />
       )}
       <img
         src={url}
